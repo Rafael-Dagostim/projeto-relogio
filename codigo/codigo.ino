@@ -13,10 +13,6 @@
 #define POT_PIN A0
 #define BUZZER_PIN 7
 
-// Constantes para debounce
-#define DEBOUNCE_DELAY 50
-#define LONG_PRESS_TIME 5000
-
 // Definição de enums
 enum MENU_STATE
 {
@@ -37,8 +33,11 @@ int minutes = 0;           // Minutos
 int alarmHour = 0;         // Hora do despertador
 int alarmMinute = 0;       // Minuto do despertador
 int buzzerFrequency = 100; // Frequência do buzzer
+bool botaoAtualUP, botaoAnteriorUP;
+bool botaoAtualDOWN, botaoAnteriorDOWN;
+bool botaoAtualCONF, botaoAnteriorCONF;
 
-/** Array de bytes com a sequência para formar todos os números possíveis.*/
+// Array de bytes com a sequência para formar todos os números possíveis.*/
 byte numBytes[10] = {
     B00111111, // 0
     B00000110, // 1
@@ -52,17 +51,7 @@ byte numBytes[10] = {
     B01101111  // 9
 };
 
-/**
- * Função para verificar o estado dos botões com debounce
- */
-bool isButtonPressed(int buttonPin)
-{
-  return digitalRead(buttonPin) == LOW;
-}
-
-/**
- * Função para atualizar o horário
- */
+// Função para atualizar o horário
 void updateClock()
 {
   unsigned long currentMillis = millis();
@@ -91,9 +80,9 @@ void updateBuzzerTone()
   buzzerFrequency = map(analogRead(POT_PIN), 0, 1023, 0, 20000);
 }
 
-/**
- * Atualiza todos os displays do painel.
- */
+
+ //Atualiza todos os displays do painel.
+ 
 void updateDisplays(int digits[4])
 {
   for (int display = 0; display < 4; display++)
@@ -111,7 +100,7 @@ void setup()
   pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
   pinMode(BTN_CONF_PIN, INPUT_PULLUP);
 
-  DDRB = B00011111; // Setando as portas dos TBJ's
+  DDRB = B00001111; // Setando as portas dos TBJ's
   DDRD = B11111111; // Setando as portas do display e do buzzer
 }
 
@@ -119,14 +108,13 @@ void executeMenuOffState()
 {
   int digits[4] = {hours / 10, hours % 10, minutes / 10, minutes % 10};
   updateDisplays(digits);
-  if (isButtonPressed(BTN_CONF_PIN))
+  if ((botaoAtualCONF == LOW) && (botaoAnteriorCONF == HIGH))
   {
-    while (isButtonPressed(BTN_CONF_PIN))
-    {
+   
       updateClock();
       int digits[4] = {hours / 10, hours % 10, minutes / 10, minutes % 10};
       updateDisplays(digits);
-    }
+   
     menuState = MENU_STATE::SELECT;
   }
 }
@@ -134,12 +122,11 @@ void executeMenuOffState()
 void executeSelectState()
 {
   int digits[4] = {0, 0, 0, selectNextState};
-  if (isButtonPressed(BTN_UP_PIN) || isButtonPressed(BTN_DOWN_PIN))
+  if (((botaoAtualUP == LOW) && (botaoAnteriorUP == HIGH)) || ((botaoAtualDOWN == LOW) && (botaoAnteriorDOWN == HIGH)))
   {
-    while (isButtonPressed(BTN_UP_PIN) || isButtonPressed(BTN_DOWN_PIN))
-    {
+   
       updateDisplays(digits);
-    }
+   
     if (selectNextState == MENU_STATE::TIME_CONFIG)
     {
       selectNextState = MENU_STATE::ALARM_CONFIG;
@@ -150,12 +137,11 @@ void executeSelectState()
     }
   }
 
-  if (isButtonPressed(BTN_CONF_PIN))
+  if ((botaoAtualCONF == LOW) && (botaoAnteriorCONF == HIGH))
   {
-    while (isButtonPressed(BTN_CONF_PIN))
-    {
+   
       updateDisplays(digits);
-    }
+    
     menuState = selectNextState;
   }
 
@@ -165,13 +151,12 @@ void executeSelectState()
 void executeTimeConfigState()
 {
 
-  if (isButtonPressed(BTN_UP_PIN))
+  if ((botaoAtualUP == LOW) && (botaoAnteriorUP == HIGH))
   {
-    while (isButtonPressed(BTN_UP_PIN))
-    {
+   
       int digits[4] = {hours / 10, hours % 10, minutes / 10, minutes % 10};
       updateDisplays(digits);
-    }
+    
     minutes++;
     if (minutes >= 60)
     {
@@ -184,13 +169,12 @@ void executeTimeConfigState()
     }
   }
 
-  if (isButtonPressed(BTN_DOWN_PIN))
+  if ((botaoAtualDOWN == LOW) && (botaoAnteriorDOWN == HIGH))
   {
-    while (isButtonPressed(BTN_DOWN_PIN))
-    {
+    
       int digits[4] = {hours / 10, hours % 10, minutes / 10, minutes % 10};
       updateDisplays(digits);
-    }
+    
     minutes--;
     if (minutes < 0)
     {
@@ -203,13 +187,12 @@ void executeTimeConfigState()
     }
   }
 
-  if (isButtonPressed(BTN_CONF_PIN))
+  if ((botaoAtualCONF == LOW) && (botaoAnteriorCONF == HIGH))
   {
-    while (isButtonPressed(BTN_CONF_PIN))
-    {
+    
       int digits[4] = {alarmHour / 10, alarmHour % 10, alarmMinute / 10, alarmMinute % 10};
       updateDisplays(digits);
-    }
+   
     menuState = MENU_STATE::OFF;
   }
 
@@ -219,13 +202,12 @@ void executeTimeConfigState()
 
 void executeAlarmConfigState()
 {
-  if (isButtonPressed(BTN_UP_PIN))
+  if ((botaoAtualUP == LOW) && (botaoAnteriorUP == HIGH))
   {
-    while (isButtonPressed(BTN_UP_PIN))
-    {
+    
       int digits[4] = {alarmHour / 10, alarmHour % 10, alarmMinute / 10, alarmMinute % 10};
       updateDisplays(digits);
-    }
+    
     alarmMinute++;
     if (alarmMinute >= 60)
     {
@@ -238,13 +220,12 @@ void executeAlarmConfigState()
     }
   }
 
-  if (isButtonPressed(BTN_DOWN_PIN))
+  if ((botaoAtualDOWN == LOW) && (botaoAnteriorDOWN == HIGH))
   {
-    while (isButtonPressed(BTN_DOWN_PIN))
-    {
+    
       int digits[4] = {alarmHour / 10, alarmHour % 10, alarmMinute / 10, alarmMinute % 10};
       updateDisplays(digits);
-    }
+    
     alarmMinute--;
     if (alarmMinute < 0)
     {
@@ -257,13 +238,12 @@ void executeAlarmConfigState()
     }
   }
 
-  if (isButtonPressed(BTN_CONF_PIN))
+  if ((botaoAtualCONF == LOW) && (botaoAnteriorCONF == HIGH))
   {
-    while (isButtonPressed(BTN_CONF_PIN))
-    {
+    
       int digits[4] = {alarmHour / 10, alarmHour % 10, alarmMinute / 10, alarmMinute % 10};
       updateDisplays(digits);
-    }
+    
     menuState = MENU_STATE::OFF;
   }
 
@@ -273,6 +253,10 @@ void executeAlarmConfigState()
 
 void loop()
 {
+  botaoAtualUP   = digitalRead(BTN_UP_PIN);
+  botaoAtualDOWN = digitalRead(BTN_DOWN_PIN);
+  botaoAtualCONF = digitalRead(BTN_CONF_PIN);
+
   switch (menuState)
   {
   case MENU_STATE::SELECT:
@@ -300,11 +284,8 @@ void loop()
   if (hours == alarmHour && minutes == alarmMinute && stopAlarm == false)
   {
 
-    if (isButtonPressed(BTN_UP_PIN))
+    if ((botaoAtualUP == LOW) && (botaoAnteriorUP == HIGH))
     {
-      while (isButtonPressed(BTN_UP_PIN))
-      {
-      }
       stopAlarm = true;
     }
     tone(BUZZER_PIN, buzzerFrequency);
@@ -320,4 +301,8 @@ void loop()
 
   digitalWrite(12, stopAlarm);
   updateBuzzerTone();
+
+  botaoAnteriorUP   = botaoAtualUP;
+  botaoAnteriorDOWN = botaoAtualDOWN;
+  botaoAnteriorCONF = botaoAtualCONF;
 }
